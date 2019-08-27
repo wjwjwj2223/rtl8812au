@@ -107,7 +107,7 @@ CONFIG_RTW_SDIO_PM_KEEP_POWER = y
 ###################### MP HW TX MODE FOR VHT #######################
 CONFIG_MP_VHT_HW_TX_MODE = n
 ###################### Platform Related #######################
-CONFIG_PLATFORM_I386_PC = y
+CONFIG_PLATFORM_I386_PC = n
 CONFIG_PLATFORM_ANDROID_X86 = n
 CONFIG_PLATFORM_ANDROID_INTEL_X86 = n
 CONFIG_PLATFORM_OPENWRT_NEO2 = n
@@ -171,6 +171,15 @@ CONFIG_PLATFORM_NV_TK1_UBUNTU = n
 CONFIG_PLATFORM_RTL8197D = n
 CONFIG_PLATFORM_AML_S905 = n
 CONFIG_PLATFORM_ZTE_ZX296716 = n
+
+ifeq ($(ARCH), arm)
+CONFIG_PLATFORM_ARM_RPI = y
+else ifeq ($(ARCH), arm64)
+CONFIG_PLATFORM_ARM64_RPI = y
+else
+CONFIG_PLATFORM_I386_PC = y
+endif
+
 ###############################################################
 
 CONFIG_DRVEXT_MODULE = n
