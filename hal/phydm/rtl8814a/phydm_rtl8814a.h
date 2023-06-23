@@ -27,6 +27,8 @@
 #define	MF_USC_LSC		0
 #define	Monitor_TIME	30
 
+s8 phydm_cck_rssi_8814a(struct dm_struct *dm, u16 lna_idx, u8 vga_idx);
+
 VOID
 odm_Write_Dynamic_CCA_8814A(
 	struct dm_struct    *pDM_Odm,

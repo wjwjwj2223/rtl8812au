@@ -30,7 +30,11 @@ do_iqk_8821a(
 );
 void
 phy_iq_calibrate_8821a(
+<<<<<<<< HEAD:hal/phydm/halrf/rtl8821a/halrf_iqk_8821a_ap.h
+	struct dm_struct	*dm,
+========
 	void		*dm_void,
+>>>>>>>> 006c821ae82f0675d98db5c569a30591f5fc2a70:hal/phydm/halrf/rtl8821a/halrf_iqk_8821a_win.h
 	boolean	is_recovery
 );
 #else

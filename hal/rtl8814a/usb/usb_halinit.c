@@ -1,7 +1,7 @@
 /******************************************************************************
  *
  * Copyright(c) 2007 - 2011 Realtek Corporation. All rights reserved.
- *                                        
+ *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of version 2 of the GNU General Public License as
  * published by the Free Software Foundation.
@@ -50,7 +50,7 @@ _ConfigChipOutEP_8814(
 
 	switch (NumOutPipe) {
 	case	4:
-		pHalData->OutEpQueueSel = TX_SELE_HQ | TX_SELE_LQ | TX_SELE_NQ;
+		pHalData->OutEpQueueSel = TX_SELE_HQ | TX_SELE_LQ | TX_SELE_NQ | TX_SELE_EQ;
 		pHalData->OutEpNumber = 4;
 		break;
 	case	3:
@@ -277,7 +277,7 @@ static u32 _InitPowerOn_8814AU(_adapter *padapter)
 	u8	u1btmp = rtw_read8(padapter, 0x10C2);
 	rtw_write8(padapter, 0x10C2, (u1btmp | BIT1));
 
-	if(!HalPwrSeqCmdParsing(padapter, ~PWR_CUT_TESTCHIP_MSK, PWR_FAB_ALL_MSK, PWR_INTF_USB_MSK, Rtl8814A_NIC_ENABLE_FLOW))
+	if(!HalPwrSeqCmdParsing(padapter, PWR_CUT_TESTCHIP_MSK, PWR_FAB_ALL_MSK, PWR_INTF_USB_MSK, Rtl8814A_NIC_ENABLE_FLOW))
 		return _FAIL;
 
 
@@ -319,7 +319,7 @@ _InitInterrupt_8814AU(
 static void _InitID_8814A(IN  PADAPTER Adapter)
 {
 //	hal_init_macaddr(Adapter);//set mac_address
-	rtw_restore_mac_addr(Adapter);
+	//rtw_restore_mac_addr(Adapter);
 }
 
 static VOID
@@ -595,8 +595,8 @@ _InitMacConfigure_8814A(
 	rtw_write32(Adapter, REG_RRSR, regRRSR);
 
 	// Retry Limit
-	value16 = _LRL(0x30) | _SRL(0x30);
-	rtw_write16(Adapter, REG_RETRY_LIMIT_8814A, value16);
+	value16 = BIT_LRL(0x30) | BIT_SRL(0x30);
+	rtw_write16(Adapter, REG_RETRY_LIMIT, value16);
 	
 	pHalData->ReceiveConfig = RCR_APM | RCR_AM | RCR_AB |RCR_CBSSID_DATA| RCR_CBSSID_BCN| RCR_APP_ICV | RCR_AMF | RCR_HTC_LOC_CTRL | RCR_APP_MIC | RCR_APP_PHYST_RXFF;
 	pHalData->ReceiveConfig |= FORCEACK;
@@ -1710,7 +1710,7 @@ hal_carddisable_8814(
 	rtw_write8(Adapter, REG_CR_8814A, 0x0);
 
 	// Card disable power action flow
-	HalPwrSeqCmdParsing(Adapter, ~PWR_CUT_TESTCHIP_MSK, PWR_FAB_ALL_MSK, PWR_INTF_USB_MSK, Rtl8814A_NIC_DISABLE_FLOW);
+	HalPwrSeqCmdParsing(Adapter, PWR_CUT_TESTCHIP_MSK, PWR_FAB_ALL_MSK, PWR_INTF_USB_MSK, Rtl8814A_NIC_DISABLE_FLOW);
 
 	GET_HAL_DATA(Adapter)->bFWReady = _FALSE;
 	

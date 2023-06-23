@@ -22,6 +22,44 @@
 #include "../phydm_precomp.h"
 
 #if (RTL8821A_SUPPORT == 1)
+s8 phydm_cck_rssi_8821a(struct dm_struct *dm, u16 lna_idx, u8 vga_idx)
+{
+	s8 rx_pwr_all = 0;
+
+	switch (lna_idx) {
+	case 7:
+		if (vga_idx <= 27)
+			rx_pwr_all = -94 + 2 * (27 - vga_idx);
+		else
+			rx_pwr_all = -94;
+		break;
+	case 6:
+		rx_pwr_all = -42 + 2 * (2 - vga_idx);
+		break;
+	case 5:
+		rx_pwr_all = -36 + 2 * (7 - vga_idx);
+		break;
+	case 4:
+		rx_pwr_all = -30 + 2 * (7 - vga_idx);
+		break;
+	case 3:
+		rx_pwr_all = -18 + 2 * (7 - vga_idx);
+		break;
+	case 2:
+		rx_pwr_all = 2 * (5 - vga_idx);
+		break;
+	case 1:
+		rx_pwr_all = 14 - 2 * vga_idx;
+		break;
+	case 0:
+		rx_pwr_all = 20 - 2 * vga_idx;
+		break;
+	default:
+		break;
+	}
+
+	return rx_pwr_all;
+}
 
 void
 phydm_set_ext_band_switch_8821A(

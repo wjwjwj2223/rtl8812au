@@ -16,31 +16,28 @@
 #include "mp_precomp.h"
 #include "../../phydm_precomp.h"
 
-
-
 /*---------------------------Define Local Constant---------------------------*/
 /* 2010/04/25 MH Define the max tx power tracking tx agc power. */
 #define		ODM_TXPWRTRACK_MAX_IDX8821A		6
 
 /*---------------------------Define Local Constant---------------------------*/
 
-
 /* 3 ============================================================
  * 3 Tx Power Tracking
  * 3 ============================================================ */
 void halrf_rf_lna_setting_8821a(
 		struct dm_struct	*dm,
-		enum phydm_lna_set type
+		enum halrf_lna_set type
 )
 {
 	/*phydm_disable_lna*/
-	if (type == phydm_lna_disable) {
+	if (type == HALRF_LNA_DISABLE) {
 		odm_set_rf_reg(dm, RF_PATH_A, 0xef, 0x80000, 0x1);
 		odm_set_rf_reg(dm, RF_PATH_A, 0x30, 0xfffff, 0x18000);	/*select Rx mode*/
 		odm_set_rf_reg(dm, RF_PATH_A, 0x31, 0xfffff, 0x0002f);
 		odm_set_rf_reg(dm, RF_PATH_A, 0x32, 0xfffff, 0xfb09b);	/*disable LNA*/
 		odm_set_rf_reg(dm, RF_PATH_A, 0xef, 0x80000, 0x0);
-	} else if (type == phydm_lna_enable) {
+	} else if (type == HALRF_LNA_ENABLE) {
 		odm_set_rf_reg(dm, RF_PATH_A, 0xef, 0x80000, 0x1);
 		odm_set_rf_reg(dm, RF_PATH_A, 0x30, 0xfffff, 0x18000);	/*select Rx mode*/
 		odm_set_rf_reg(dm, RF_PATH_A, 0x31, 0xfffff, 0x0002f);
@@ -101,8 +98,8 @@ odm_tx_pwr_track_set_pwr8821a(
 			tx_rate = (u8)rate;
 	}
 
-	PHYDM_DBG(dm, ODM_COMP_TX_PWR_TRACK, "Power Tracking tx_rate=0x%X\n", tx_rate);
-	PHYDM_DBG(dm, ODM_COMP_TX_PWR_TRACK, "===>odm_tx_pwr_track_set_pwr8821a\n");
+	//PHYDM_DBG(dm, DBG_COMP_MCC, "Power Tracking tx_rate=0x%X\n", tx_rate);
+	//PHYDM_DBG(dm, DBG_COMP_MCC, "===>odm_tx_pwr_track_set_pwr8821a\n");
 
 	if (tx_rate != 0xFF) {
 		/* 2 CCK */
@@ -138,19 +135,19 @@ odm_tx_pwr_track_set_pwr8821a(
 		else
 			pwr_tracking_limit = 24;
 	}
-	PHYDM_DBG(dm, ODM_COMP_TX_PWR_TRACK, "tx_rate=0x%x, pwr_tracking_limit=%d\n", tx_rate, pwr_tracking_limit);
+	//PHYDM_DBG(dm, DBG_COMP_MCC, "tx_rate=0x%x, pwr_tracking_limit=%d\n", tx_rate, pwr_tracking_limit);
 
 	if (method == BBSWING) {
 		if (rf_path == RF_PATH_A) {
 			final_bb_swing_idx[RF_PATH_A] = (dm->rf_calibrate_info.OFDM_index[RF_PATH_A] > pwr_tracking_limit) ? pwr_tracking_limit : dm->rf_calibrate_info.OFDM_index[RF_PATH_A];
-			PHYDM_DBG(dm, ODM_COMP_TX_PWR_TRACK, "dm->rf_calibrate_info.OFDM_index[RF_PATH_A]=%d, dm->RealBbSwingIdx[RF_PATH_A]=%d\n",
-				dm->rf_calibrate_info.OFDM_index[RF_PATH_A], final_bb_swing_idx[RF_PATH_A]);
+			/*PHYDM_DBG(dm, DBG_COMP_MCC, "dm->rf_calibrate_info.OFDM_index[RF_PATH_A]=%d, dm->RealBbSwingIdx[RF_PATH_A]=%d\n",
+				dm->rf_calibrate_info.OFDM_index[RF_PATH_A], final_bb_swing_idx[RF_PATH_A]);*/
 
 			odm_set_bb_reg(dm, REG_A_TX_SCALE_JAGUAR, 0xFFE00000, tx_scaling_table_jaguar[final_bb_swing_idx[RF_PATH_A]]);
 		}
 	} else if (method == MIX_MODE) {
-		PHYDM_DBG(dm, ODM_COMP_TX_PWR_TRACK, "cali_info->default_ofdm_index=%d, cali_info->absolute_ofdm_swing_idx[rf_path]=%d, rf_path = %d\n",
-			cali_info->default_ofdm_index, cali_info->absolute_ofdm_swing_idx[rf_path], rf_path);
+		/*PHYDM_DBG(dm, DBG_COMP_MCC, "cali_info->default_ofdm_index=%d, cali_info->absolute_ofdm_swing_idx[rf_path]=%d, rf_path = %d\n",
+			cali_info->default_ofdm_index, cali_info->absolute_ofdm_swing_idx[rf_path], rf_path);*/
 
 		final_cck_swing_index = cali_info->default_cck_index + cali_info->absolute_ofdm_swing_idx[rf_path];
 		final_ofdm_swing_index = cali_info->default_ofdm_index + cali_info->absolute_ofdm_swing_idx[rf_path];
@@ -166,7 +163,7 @@ odm_tx_pwr_track_set_pwr8821a(
 
 				phy_set_tx_power_level_by_path(adapter, *dm->channel, RF_PATH_A);
 
-				PHYDM_DBG(dm, ODM_COMP_TX_PWR_TRACK, "******Path_A Over BBSwing Limit, pwr_tracking_limit = %d, Remnant tx_agc value = %d\n", pwr_tracking_limit, cali_info->remnant_ofdm_swing_idx[rf_path]);
+				//PHYDM_DBG(dm, DBG_COMP_MCC, "******Path_A Over BBSwing Limit, pwr_tracking_limit = %d, Remnant tx_agc value = %d\n", pwr_tracking_limit, cali_info->remnant_ofdm_swing_idx[rf_path]);
 			} else if (final_ofdm_swing_index <= 0) {
 				cali_info->remnant_cck_swing_idx = final_cck_swing_index;
 				cali_info->remnant_ofdm_swing_idx[rf_path] = final_ofdm_swing_index;
@@ -177,11 +174,11 @@ odm_tx_pwr_track_set_pwr8821a(
 
 				phy_set_tx_power_level_by_path(adapter, *dm->channel, RF_PATH_A);
 
-				PHYDM_DBG(dm, ODM_COMP_TX_PWR_TRACK, "******Path_A Lower then BBSwing lower bound  0, Remnant tx_agc value = %d\n", cali_info->remnant_ofdm_swing_idx[rf_path]);
+				//PHYDM_DBG(dm, DBG_COMP_MCC, "******Path_A Lower then BBSwing lower bound  0, Remnant tx_agc value = %d\n", cali_info->remnant_ofdm_swing_idx[rf_path]);
 			} else {
 				odm_set_bb_reg(dm, REG_A_TX_SCALE_JAGUAR, 0xFFE00000, tx_scaling_table_jaguar[final_ofdm_swing_index]);
 
-				PHYDM_DBG(dm, ODM_COMP_TX_PWR_TRACK, "******Path_A Compensate with BBSwing, final_ofdm_swing_index = %d\n", final_ofdm_swing_index);
+				//PHYDM_DBG(dm, DBG_COMP_MCC, "******Path_A Compensate with BBSwing, final_ofdm_swing_index = %d\n", final_ofdm_swing_index);
 
 				if (cali_info->modify_tx_agc_flag_path_a) { /*If tx_agc has changed, reset tx_agc again*/
 					cali_info->remnant_cck_swing_idx = 0;
@@ -191,7 +188,7 @@ odm_tx_pwr_track_set_pwr8821a(
 
 					cali_info->modify_tx_agc_flag_path_a = false;
 
-					PHYDM_DBG(dm, ODM_COMP_TX_PWR_TRACK, "******Path_A dm->Modify_TxAGC_Flag = false\n");
+					PHYDM_DBG(dm, DBG_COMP_MCC, "******Path_A dm->Modify_TxAGC_Flag = false\n");
 				}
 			}
 		}
@@ -248,7 +245,7 @@ get_delta_swing_table_8821a(
 			tx_rate = (u8)rate;
 	}
 
-	PHYDM_DBG(dm, ODM_COMP_TX_PWR_TRACK, "Power Tracking tx_rate=0x%X\n", tx_rate);
+	//PHYDM_DBG(dm, DBG_COMP_MCC, "Power Tracking tx_rate=0x%X\n", tx_rate);
 
 
 	if (1 <= channel && channel <= 14) {

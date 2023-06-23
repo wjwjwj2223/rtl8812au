@@ -50,8 +50,8 @@ void _iqk_rx_fill_iqc_8821a(
 		odm_set_bb_reg(dm, 0x82c, BIT(31), 0x0); /* [31] = 0 --> Page C */
 		odm_set_bb_reg(dm, 0xc10, 0x000003ff, RX_X >> 1);
 		odm_set_bb_reg(dm, 0xc10, 0x03ff0000, (RX_Y >> 1) & 0x000003ff);
-		PHYDM_DBG(dm, ODM_COMP_CALIBRATION, "RX_X = %x;;RX_Y = %x ====>fill to IQC\n", RX_X >> 1, RX_Y >> 1);
-		PHYDM_DBG(dm, ODM_COMP_CALIBRATION, "0xc10 = %x ====>fill to IQC\n", odm_read_4byte(dm, 0xc10));
+		PHYDM_DBG(dm, DBG_COMP_MCC, "RX_X = %x;;RX_Y = %x ====>fill to IQC\n", RX_X >> 1, RX_Y >> 1);
+		PHYDM_DBG(dm, DBG_COMP_MCC, "0xc10 = %x ====>fill to IQC\n", odm_read_4byte(dm, 0xc10));
 	}
 	break;
 	default:
@@ -75,8 +75,8 @@ void _iqk_tx_fill_iqc_8821a(
 		odm_write_4byte(dm, 0xcc8, 0x20000000);
 		odm_set_bb_reg(dm, 0xccc, 0x000007ff, TX_Y);
 		odm_set_bb_reg(dm, 0xcd4, 0x000007ff, TX_X);
-		PHYDM_DBG(dm, ODM_COMP_CALIBRATION, "TX_X = %x;;TX_Y = %x =====> fill to IQC\n", TX_X, TX_Y);
-		PHYDM_DBG(dm, ODM_COMP_CALIBRATION, "0xcd4 = %x;;0xccc = %x ====>fill to IQC\n", odm_get_bb_reg(dm, 0xcd4, 0x000007ff), odm_get_bb_reg(dm, 0xccc, 0x000007ff));
+		PHYDM_DBG(dm, DBG_COMP_MCC, "TX_X = %x;;TX_Y = %x =====> fill to IQC\n", TX_X, TX_Y);
+		PHYDM_DBG(dm, DBG_COMP_MCC, "0xcd4 = %x;;0xccc = %x ====>fill to IQC\n", odm_get_bb_reg(dm, 0xcd4, 0x000007ff), odm_get_bb_reg(dm, 0xccc, 0x000007ff));
 	}
 	break;
 	default:
@@ -97,7 +97,7 @@ void _iqk_backup_mac_bb_8821a(
 	for (i = 0; i < MACBB_NUM; i++)
 		MACBB_backup[i] = odm_read_4byte(dm, backup_macbb_reg[i]);
 
-	PHYDM_DBG(dm, ODM_COMP_CALIBRATION, "BackupMacBB Success!!!!\n");
+	PHYDM_DBG(dm, DBG_COMP_MCC, "BackupMacBB Success!!!!\n");
 }
 
 void _iqk_backup_rf_8821a(
@@ -114,7 +114,7 @@ void _iqk_backup_rf_8821a(
 	/* Save RF Parameters */
 	for (i = 0; i < RF_NUM; i++)
 		RFA_backup[i] = odm_get_rf_reg(dm, RF_PATH_A, backup_rf_reg[i], MASKDWORD);
-	PHYDM_DBG(dm, ODM_COMP_CALIBRATION, "BackupRF Success!!!!\n");
+	PHYDM_DBG(dm, DBG_COMP_MCC, "BackupRF Success!!!!\n");
 }
 
 void _iqk_backup_afe_8821a(
@@ -129,7 +129,7 @@ void _iqk_backup_afe_8821a(
 	/* Save AFE Parameters */
 	for (i = 0; i < AFE_NUM; i++)
 		AFE_backup[i] = odm_read_4byte(dm, backup_afe_reg[i]);
-	PHYDM_DBG(dm, ODM_COMP_CALIBRATION, "BackupAFE Success!!!!\n");
+	PHYDM_DBG(dm, DBG_COMP_MCC, "BackupAFE Success!!!!\n");
 }
 
 void _iqk_restore_mac_bb_8821a(
@@ -144,7 +144,7 @@ void _iqk_restore_mac_bb_8821a(
 	/* Reload MacBB Parameters */
 	for (i = 0; i < MACBB_NUM; i++)
 		odm_write_4byte(dm, backup_macbb_reg[i], MACBB_backup[i]);
-	PHYDM_DBG(dm, ODM_COMP_CALIBRATION, "RestoreMacBB Success!!!!\n");
+	PHYDM_DBG(dm, DBG_COMP_MCC, "RestoreMacBB Success!!!!\n");
 }
 
 void _iqk_restore_rf_8821a(
@@ -164,7 +164,7 @@ void _iqk_restore_rf_8821a(
 	switch (path) {
 	case RF_PATH_A:
 	{
-		PHYDM_DBG(dm, ODM_COMP_CALIBRATION, "RestoreRF path A Success!!!!\n");
+		PHYDM_DBG(dm, DBG_COMP_MCC, "RestoreRF path A Success!!!!\n");
 	}
 	break;
 	default:
@@ -194,7 +194,7 @@ void _iqk_restore_afe_8821a(
 	odm_write_4byte(dm, 0xcc4, 0x20040000);
 	odm_write_4byte(dm, 0xcc8, 0x20000000);
 	odm_write_4byte(dm, 0xcb8, 0x0);
-	PHYDM_DBG(dm, ODM_COMP_CALIBRATION, "RestoreAFE Success!!!!\n");
+	PHYDM_DBG(dm, DBG_COMP_MCC, "RestoreAFE Success!!!!\n");
 }
 
 void _iqk_configure_mac_8821a(
@@ -222,7 +222,7 @@ void _iqk_tx_8821a(
 	boolean	VDF_enable = false;
 	int			i, k, VDF_Y[3], VDF_X[3], tx_dt[3], ii, dx = 0, dy = 0, TX_finish = 0, RX_finish1 = 0, RX_finish2 = 0;
 
-	PHYDM_DBG(dm, ODM_COMP_CALIBRATION, "band_width = %d, support_interface = %d, ext_pa = %d, ext_pa_5g = %d\n", *dm->band_width, dm->support_interface, dm->ext_pa, dm->ext_pa_5g);
+	PHYDM_DBG(dm, DBG_COMP_MCC, "band_width = %d, support_interface = %d, ext_pa = %d, ext_pa_5g = %d\n", *dm->band_width, dm->support_interface, dm->ext_pa, dm->ext_pa_5g);
 	if (*dm->band_width == 2)
 		VDF_enable = true;
 
@@ -279,7 +279,7 @@ void _iqk_tx_8821a(
 
 			odm_write_4byte(dm, 0xc80, 0x18008c10);/* TX_Tone_idx[9:0], TxK_Mask[29] TX_Tone = 16 */
 			odm_write_4byte(dm, 0xc84, 0x38008c10);/* RX_Tone_idx[9:0], RxK_Mask[29] */
-			odm_write_4byte(dm, 0xcb8, 0x00100000);/* cb8[20] 將 SI/PI 使用權切給 iqk_dpk module */
+			odm_write_4byte(dm, 0xcb8, 0x00100000);/* cb8[20]iqk_dpk module */
 			odm_write_4byte(dm, 0x980, 0xfa000000);
 			odm_write_4byte(dm, 0x980, 0xf8000000);
 
@@ -355,8 +355,8 @@ void _iqk_tx_8821a(
 					break;
 					case 2:
 					{
-						PHYDM_DBG(dm, ODM_COMP_CALIBRATION, "VDF_Y[1] = %x;;;VDF_Y[0] = %x\n", VDF_Y[1] >> 21 & 0x00007ff, VDF_Y[0] >> 21 & 0x00007ff);
-						PHYDM_DBG(dm, ODM_COMP_CALIBRATION, "VDF_X[1] = %x;;;VDF_X[0] = %x\n", VDF_X[1] >> 21 & 0x00007ff, VDF_X[0] >> 21 & 0x00007ff);
+						PHYDM_DBG(dm, DBG_COMP_MCC, "VDF_Y[1] = %x;;;VDF_Y[0] = %x\n", VDF_Y[1] >> 21 & 0x00007ff, VDF_Y[0] >> 21 & 0x00007ff);
+						PHYDM_DBG(dm, DBG_COMP_MCC, "VDF_X[1] = %x;;;VDF_X[0] = %x\n", VDF_X[1] >> 21 & 0x00007ff, VDF_X[0] >> 21 & 0x00007ff);
 						tx_dt[cal] = (VDF_Y[1] >> 20) - (VDF_Y[0] >> 20);
 						tx_dt[cal] = ((16 * tx_dt[cal]) * 10000 / 15708);
 						tx_dt[cal] = (tx_dt[cal] >> 1) + (tx_dt[cal] & BIT(0));
@@ -367,7 +367,7 @@ void _iqk_tx_8821a(
 					}
 					break;
 					}
-					odm_write_4byte(dm, 0xcb8, 0x00100000);/* cb8[20] 將 SI/PI 使用權切給 iqk_dpk module */
+					odm_write_4byte(dm, 0xcb8, 0x00100000);/* cb8[20]  iqk_dpk module */
 					cal_retry = 0;
 					while (1) {
 						/* one shot */
@@ -421,7 +421,7 @@ void _iqk_tx_8821a(
 			} else {
 				odm_write_4byte(dm, 0xc80, 0x18008c10);/* TX_Tone_idx[9:0], TxK_Mask[29] TX_Tone = 16 */
 				odm_write_4byte(dm, 0xc84, 0x38008c10);/* RX_Tone_idx[9:0], RxK_Mask[29] */
-				odm_write_4byte(dm, 0xcb8, 0x00100000);/* cb8[20] 將 SI/PI 使用權切給 iqk_dpk module */
+				odm_write_4byte(dm, 0xcb8, 0x00100000);/* cb8[20] iqk_dpk module */
 				cal_retry = 0;
 				while (1) {
 					/* one shot */
@@ -508,7 +508,7 @@ void _iqk_tx_8821a(
 				else
 					odm_write_4byte(dm, 0xc8c, 0x28160d00);
 
-				odm_write_4byte(dm, 0xcb8, 0x00100000);/* cb8[20] 將 SI/PI 使用權切給 iqk_dpk module */
+				odm_write_4byte(dm, 0xcb8, 0x00100000);/* cb8[20] iqk_dpk module */
 
 				cal_retry = 0;
 				while (1) {
@@ -589,12 +589,12 @@ void _iqk_tx_8821a(
 	switch (path) {
 	case RF_PATH_A:
 	{
-		PHYDM_DBG(dm, ODM_COMP_CALIBRATION, "========Path_A =======\n");
+		PHYDM_DBG(dm, DBG_COMP_MCC, "========Path_A =======\n");
 		if (tx_average == 0)
 			break;
 
 		for (i = 0; i < tx_average; i++)
-			PHYDM_DBG(dm, ODM_COMP_CALIBRATION, "TX_X0[%d] = %x ;; TX_Y0[%d] = %x\n", i, (TX_X0[i]) >> 21 & 0x000007ff, i, (TX_Y0[i]) >> 21 & 0x000007ff);
+			PHYDM_DBG(dm, DBG_COMP_MCC, "TX_X0[%d] = %x ;; TX_Y0[%d] = %x\n", i, (TX_X0[i]) >> 21 & 0x000007ff, i, (TX_Y0[i]) >> 21 & 0x000007ff);
 		for (i = 0; i < tx_average; i++) {
 			for (ii = i + 1; ii < tx_average; ii++) {
 				dx = (TX_X0[i] >> 21) - (TX_X0[ii] >> 21);
@@ -621,9 +621,9 @@ void _iqk_tx_8821a(
 			break;
 
 		for (i = 0; i < rx_average; i++) {
-			PHYDM_DBG(dm, ODM_COMP_CALIBRATION, "RX_X0[0][%d] = %x ;; RX_Y0[0][%d] = %x\n", i, (RX_X0[0][i]) >> 21 & 0x000007ff, i, (RX_Y0[0][i]) >> 21 & 0x000007ff);
+			PHYDM_DBG(dm, DBG_COMP_MCC, "RX_X0[0][%d] = %x ;; RX_Y0[0][%d] = %x\n", i, (RX_X0[0][i]) >> 21 & 0x000007ff, i, (RX_Y0[0][i]) >> 21 & 0x000007ff);
 			if (rx_iqk_loop == 2) {
-				PHYDM_DBG(dm, ODM_COMP_CALIBRATION, "RX_X0[1][%d] = %x ;; RX_Y0[1][%d] = %x\n", i, (RX_X0[1][i]) >> 21 & 0x000007ff, i, (RX_Y0[1][i]) >> 21 & 0x000007ff);
+				PHYDM_DBG(dm, DBG_COMP_MCC, "RX_X0[1][%d] = %x ;; RX_Y0[1][%d] = %x\n", i, (RX_X0[1][i]) >> 21 & 0x000007ff, i, (RX_Y0[1][i]) >> 21 & 0x000007ff);
 			}
 		}
 		for (i = 0; i < rx_average; i++) {
@@ -688,7 +688,7 @@ _phy_iq_calibrate_by_fw_8821a(
 	u8			iqk_cmd[3] = { *dm->channel, 0x0, 0x0};
 	u8			buf1 = 0x0;
 	u8			buf2 = 0x0;
-	PHYDM_DBG(dm, ODM_COMP_CALIBRATION, "channel: %d\n", *dm->channel);
+	PHYDM_DBG(dm, DBG_COMP_MCC, "channel: %d\n", *dm->channel);
 
 
 	/* Byte 2, Bit 4 ~ Bit 5 : band_type */
@@ -765,7 +765,7 @@ phy_iq_calibrate_8821a(
 		_phy_iq_calibrate_by_fw_8821a(dm);
 		phydm_iqk_wait(dm, 500);
 		if (dm->rf_calibrate_info.is_iqk_in_progress) {
-			PHYDM_DBG(dm, ODM_COMP_CALIBRATION, "== FW IQK TIMEOUT (Still in progress after 500ms) ==\n");
+			PHYDM_DBG(dm, DBG_COMP_MCC, "== FW IQK TIMEOUT (Still in progress after 500ms) ==\n");
 		}
 	} else
 		_phy_iq_calibrate_8821a(dm);

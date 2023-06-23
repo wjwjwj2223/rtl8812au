@@ -21,6 +21,10 @@
 
 //#include <drv_types.h>
 #include <rtl8814a_hal.h>
+#include "phydm_antdiv.h"
+
+#define REG_BCN_INTERVAL				0x0554
+
 extern u32 array_length_mp_8814a_fw_ap;
 extern u8 array_mp_8814a_fw_ap[];
 extern u32 array_length_mp_8814a_fw_nic;
@@ -500,6 +504,36 @@ SetDownLoadFwRsvdPagePkt_8814A(
 	//ReturnGenTempBuffer(pAdapter, pGenBufReservedPagePacket);
 }
 
+/* ************************************************************************************
+ *
+ * 20100209 Joseph:
+ * This function is used only for 92C to set REG_BCN_CTRL(0x550) register.
+ * We just reserve the value of the register in variable pHalData->RegBcnCtrlVal and then operate
+ * the value of the register via atomic operation.
+ * This prevents from race condition when setting this register.
+ * The value of pHalData->RegBcnCtrlVal is initialized in HwConfigureRTL8192CE() function.
+ *   */
+static void SetBcnCtrlReg(
+	PADAPTER	padapter,
+	u8		SetBits,
+	u8		ClearBits)
+{
+	PHAL_DATA_TYPE pHalData;
+	u8 RegBcnCtrlVal = 0;
+
+	pHalData = GET_HAL_DATA(padapter);
+	RegBcnCtrlVal = rtw_read8(padapter, REG_BCN_CTRL);
+
+	RegBcnCtrlVal |= SetBits;
+	RegBcnCtrlVal &= ~ClearBits;
+
+#if 0
+	/* #ifdef CONFIG_SDIO_HCI */
+	if (pHalData->sdio_himr & (SDIO_HIMR_TXBCNOK_MSK | SDIO_HIMR_TXBCNERR_MSK))
+		RegBcnCtrlVal |= EN_TXBCN_RPT;
+#endif
+	rtw_write8(padapter, REG_BCN_CTRL, RegBcnCtrlVal);
+}
 
 VOID
 HalROMDownloadFWRSVDPage8814A(
@@ -4011,6 +4045,8 @@ void init_hal_spec_8814a(_adapter *adapter)
 	hal_spec->rfpath_num_2g = 3;
 	hal_spec->rfpath_num_5g = 3;
 	hal_spec->max_tx_cnt = 4;
+	hal_spec->txgi_max = 63;
+	hal_spec->txgi_pdbm = 2;
 	hal_spec->tx_nss_num = 4;
 	hal_spec->rx_nss_num = 4;
 	hal_spec->band_cap = BAND_CAP_8814A;
@@ -4025,6 +4061,7 @@ void init_hal_spec_8814a(_adapter *adapter)
 						;
 
 	hal_spec->pg_txpwr_saddr = 0x10;
+	hal_spec->pg_txgi_diff_factor = 1;
 	rtw_macid_ctl_init_sleep_reg(adapter_to_macidctl(adapter)
 		, REG_MACID_SLEEP
 		, REG_MACID_SLEEP_1
@@ -5418,7 +5455,7 @@ static void hw_var_set_mlme_join(PADAPTER Adapter, u8 variable, u8* val)
 		
 	}
 
-	rtw_write16(Adapter, REG_RL, RetryLimit << RETRY_LIMIT_SHORT_SHIFT | RetryLimit << RETRY_LIMIT_LONG_SHIFT);
+	rtw_write16(Adapter, REG_RETRY_LIMIT, BIT_SRL(RetryLimit) | BIT_LRL(RetryLimit));
 	
 #endif //CONFIG_CONCURRENT_MODE
 }
@@ -5706,8 +5743,8 @@ u8 SetHwReg8814A(PADAPTER padapter, u8 variable, u8 *pval)
 					}
 				}
 
-				val16 = RetryLimit << RETRY_LIMIT_SHORT_SHIFT | RetryLimit << RETRY_LIMIT_LONG_SHIFT;
-				rtw_write16(padapter, REG_RL, val16);
+				val16 = BIT_SRL(RetryLimit) | BIT_LRL(RetryLimit);
+				rtw_write16(padapter, REG_RETRY_LIMIT, val16);
 			}
 #endif // !CONFIG_CONCURRENT_MODE
 
@@ -5994,8 +6031,8 @@ u8 SetHwReg8814A(PADAPTER padapter, u8 variable, u8 *pval)
 
 				retry_limit = 0x01;
 
-				val16 = retry_limit << RETRY_LIMIT_SHORT_SHIFT | retry_limit << RETRY_LIMIT_LONG_SHIFT;
-				rtw_write16(padapter, REG_RL, val16);
+				val16 = BIT_SRL(retry_limit) | BIT_LRL(retry_limit);
+				rtw_write16(padapter, REG_RETRY_LIMIT, val16);
 
 				while (rtw_get_passing_time_ms(start) < 2000
 					&& !RTW_CANNOT_RUN(padapter)
@@ -6043,8 +6080,8 @@ u8 SetHwReg8814A(PADAPTER padapter, u8 variable, u8 *pval)
 				}
 
 				retry_limit = RL_VAL_STA;
-				val16 = retry_limit << RETRY_LIMIT_SHORT_SHIFT | retry_limit << RETRY_LIMIT_LONG_SHIFT;
-				rtw_write16(padapter, REG_RL, val16);
+				val16 = BIT_SRL(retry_limit) | BIT_LRL(retry_limit);
+				rtw_write16(padapter, REG_RETRY_LIMIT, val16);
 			}
 
 			break;
@@ -6674,6 +6711,7 @@ void rtl8814_set_hal_ops(struct hal_ops *pHalFunc)
 
 	pHalFunc->set_tx_power_level_handler = &PHY_SetTxPowerLevel8814;
 	pHalFunc->get_tx_power_level_handler = &PHY_GetTxPowerLevel8814;
+	pHalFunc->set_tx_power_index_handler = &PHY_SetTxPowerIndex_8814A;
 	pHalFunc->get_tx_power_index_handler = &PHY_GetTxPowerIndex8814A;
 
 	pHalFunc->hal_dm_watchdog = &rtl8814_HalDmWatchDog;

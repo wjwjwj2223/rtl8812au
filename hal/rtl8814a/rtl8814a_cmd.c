@@ -381,7 +381,7 @@ void rtl8814_set_FwPwrMode_cmd(PADAPTER padapter, u8 PSMode)
 	/* AllON(0x0C), RFON(0x04), RFOFF(0x00) */
 	SET_8814A_H2CCMD_PWRMODE_PARM_PWR_STATE(u1H2CSetPwrMode, PowerState);
 
-	SET_8814A_H2CCMD_PWRMODE_PARM_BYTE5(u1H2CSetPwrMode, pwrModeByte5);
+	//SET_8814A_H2CCMD_PWRMODE_PARM_BYTE5(u1H2CSetPwrMode, pwrModeByte5);
 
 #ifdef CONFIG_BT_COEXIST
 	if (_TRUE == pHalData->EEPROMBluetoothCoexist)

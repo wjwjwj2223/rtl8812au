@@ -36,17 +36,17 @@
 
 void halrf_rf_lna_setting_8821a(
 		struct dm_struct	*dm,
-		enum phydm_lna_set type
+		enum halrf_lna_set type
 )
 {
 	/*phydm_disable_lna*/
-	if (type == phydm_lna_disable) {
+	if (type == HALRF_LNA_DISABLE) {
 		odm_set_rf_reg(dm, RF_PATH_A, 0xef, 0x80000, 0x1);
 		odm_set_rf_reg(dm, RF_PATH_A, 0x30, 0xfffff, 0x18000);	/*select Rx mode*/
 		odm_set_rf_reg(dm, RF_PATH_A, 0x31, 0xfffff, 0x0002f);
 		odm_set_rf_reg(dm, RF_PATH_A, 0x32, 0xfffff, 0xfb09b);	/*disable LNA*/
 		odm_set_rf_reg(dm, RF_PATH_A, 0xef, 0x80000, 0x0);
-	} else if (type == phydm_lna_enable) {
+	} else if (type == HALRF_LNA_ENABLE) {
 		odm_set_rf_reg(dm, RF_PATH_A, 0xef, 0x80000, 0x1);
 		odm_set_rf_reg(dm, RF_PATH_A, 0x30, 0xfffff, 0x18000);	/*select Rx mode*/
 		odm_set_rf_reg(dm, RF_PATH_A, 0x31, 0xfffff, 0x0002f);
@@ -610,7 +610,7 @@ void _iqk_tx_8821a(
 
 			odm_write_4byte(dm, 0xc80, 0x18008c10);/* TX_Tone_idx[9:0], TxK_Mask[29] TX_Tone = 16 */
 			odm_write_4byte(dm, 0xc84, 0x38008c10);/* RX_Tone_idx[9:0], RxK_Mask[29] */
-			odm_write_4byte(dm, 0xcb8, 0x00100000);/* cb8[20] 將 SI/PI 使用權切給 iqk_dpk module */
+			odm_write_4byte(dm, 0xcb8, 0x00100000);/* cb8[20] N SI/PI iqk_dpk module */
 			odm_write_4byte(dm, 0x980, 0xfa000000);
 			odm_write_4byte(dm, 0x980, 0xf8000000);
 
@@ -665,7 +665,7 @@ void _iqk_tx_8821a(
 
 			odm_write_4byte(dm, 0xc80, 0x18008c10);/* TX_Tone_idx[9:0], TxK_Mask[29] TX_Tone = 16 */
 			odm_write_4byte(dm, 0xc84, 0x38008c10);/* RX_Tone_idx[9:0], RxK_Mask[29] */
-			odm_write_4byte(dm, 0xcb8, 0x00100000);/* cb8[20] 將 SI/PI 使用權切給 iqk_dpk module */
+			odm_write_4byte(dm, 0xcb8, 0x00100000);/* cb8[20] SI/PIiqk_dpk module */
 			cal_retry = 0;
 			while (1) {
 				/* one shot */
@@ -752,7 +752,7 @@ void _iqk_tx_8821a(
 				else
 					odm_write_4byte(dm, 0xc8c, 0x28160d00);
 
-				odm_write_4byte(dm, 0xcb8, 0x00100000);/* cb8[20] 將 SI/PI 使用權切給 iqk_dpk module */
+				odm_write_4byte(dm, 0xcb8, 0x00100000);/* cb8[20]  SI/PI iqk_dpk module */
 
 				cal_retry = 0;
 				while (1) {

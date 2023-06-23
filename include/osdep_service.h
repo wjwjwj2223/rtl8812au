@@ -16,6 +16,10 @@
 #define __OSDEP_SERVICE_H_
 
 #include <linux/version.h>
+#ifndef RHEL_RELEASE_CODE
+#define RHEL_RELEASE_VERSION(a,b) (((a) << 8) + (b))
+#define RHEL_RELEASE_CODE 0
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 #include <linux/sched/signal.h>
 #endif
@@ -67,6 +71,8 @@
 #ifndef BIT
 	#define BIT(x)	(1 << (x))
 #endif
+
+#define CHECK_BIT(a, b) (!!((a) & (b)))
 
 #define BIT0	0x00000001
 #define BIT1	0x00000002
@@ -582,6 +588,7 @@ static inline int largest_bit(u32 bitmask)
 	return i;
 }
 
+#define rtw_abs(a) (a < 0 ? -a : a)
 #define rtw_min(a, b) ((a > b) ? b : a)
 #define rtw_is_range_a_in_b(hi_a, lo_a, hi_b, lo_b) (((hi_a) <= (hi_b)) && ((lo_a) >= (lo_b)))
 #define rtw_is_range_overlap(hi_a, lo_a, hi_b, lo_b) (((hi_a) > (lo_b)) && ((lo_a) < (hi_b)))
@@ -593,6 +600,7 @@ static inline int largest_bit(u32 bitmask)
 #define MAC_ARG(x) ((u8 *)(x))[0], ((u8 *)(x))[1], ((u8 *)(x))[2], ((u8 *)(x))[3], ((u8 *)(x))[4], ((u8 *)(x))[5]
 #endif
 
+bool rtw_macaddr_is_larger(const u8 *a, const u8 *b);
 
 extern void rtw_suspend_lock_init(void);
 extern void rtw_suspend_lock_uninit(void);

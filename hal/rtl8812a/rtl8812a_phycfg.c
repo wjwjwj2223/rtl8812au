@@ -14,17 +14,34 @@
  *****************************************************************************/
 #define _RTL8812A_PHYCFG_C_
 
-/* #include <drv_types.h> */
-
 #include <rtl8812a_hal.h>
 
-/*---------------------Define local function prototype-----------------------*/
+/* Manual Transmit Power Control 
+   The following options take values from 0 to 63, where:
+   0 - disable
+   1 - lowest transmit power the device can do
+   2 - highest transmit power the device can do
+   Note that these options may override your country's regulations about transmit power.
+   Setting the device to work at higher transmit powers most of the time may cause premature 
+   failure or damage by overheating. Make sure the device has enough airflow before you increase this.
+   It is currently unknown what these values translate to in dBm.
+*/
 
-/*----------------------------Function Body----------------------------------*/
+// Transmit Power Boost
+// This value is added to the device's calculation of transmit power index.
+// Useful if you want to keep power usage low while still boosting/decreasing transmit power.
+// Can take a negative value as well to reduce power.
+// Zero disables it. Default: 2, for a tiny boost.
+int transmit_power_boost = 2;
+// (ADVANCED) To know what transmit powers this device decides to use dynamically, see:
+// https://github.com/lwfinger/rtl8192ee/blob/42ad92dcc71cb15a62f8c39e50debe3a28566b5f/hal/phydm/rtl8192e/halhwimg8192e_rf.c#L1310
 
-/*
- * 1. BB register R/W API
- *   */
+// Transmit Power Override
+// This value completely overrides the driver's calculations and uses only one value for all transmissions.
+// Zero disables it. Default: 0
+int transmit_power_override = 0;
+
+/* Manual Transmit Power Control */
 
 u32
 PHY_QueryBBReg8812(
@@ -473,8 +490,8 @@ PHY_GetTxPowerLevel8812(
 	OUT s32		*powerlevel
 )
 {
-	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(Adapter);
-	*powerlevel = pHalData->CurrentTxPwrIdx;
+	/*HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(Adapter);
+	*powerlevel = pHalData->CurrentTxPwrIdx;*/
 #if 0
 	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(Adapter);
 	PMGNT_INFO		pMgntInfo = &(Adapter->MgntInfo);
@@ -510,22 +527,6 @@ PHY_SetTxPowerLevel8812(
 	/* RTW_INFO("<==PHY_SetTxPowerLevel8812()\n"); */
 }
 
-u8
-phy_GetCurrentTxNum_8812A(
-	IN	PADAPTER		pAdapter,
-	IN	u8				Rate
-)
-{
-	u8	tx_num = 0;
-
-	if ((Rate >= MGN_MCS8 && Rate <= MGN_MCS15) ||
-	    (Rate >= MGN_VHT2SS_MCS0 && Rate <= MGN_VHT2SS_MCS9))
-		tx_num = RF_2TX;
-	else
-		tx_num = RF_1TX;
-
-	return tx_num;
-}
 
 /**************************************************************************************************************
  *   Description:
@@ -544,10 +545,11 @@ PHY_GetTxPowerIndex_8812A(
 )
 {
 	PHAL_DATA_TYPE pHalData = GET_HAL_DATA(pAdapter);
+	struct hal_spec_t *hal_spec = GET_HAL_SPEC(pAdapter);
 	s16 power_idx;
 	u8 base_idx = 0;
 	s8 by_rate_diff = 0, limit = 0, tpt_offset = 0, extra_bias = 0;
-	u8 ntx_idx = phy_GetCurrentTxNum_8812A(pAdapter, Rate);
+	u8 ntx_idx = phy_get_current_tx_num(pAdapter, Rate);
 	BOOLEAN bIn24G = _FALSE;
 
 	base_idx = PHY_GetTxPowerIndexBase(pAdapter, RFPath, Rate, ntx_idx, BandWidth, Channel, &bIn24G);
@@ -588,12 +590,17 @@ PHY_GetTxPowerIndex_8812A(
 	}
 
 	by_rate_diff = by_rate_diff > limit ? limit : by_rate_diff;
-	power_idx = base_idx + by_rate_diff + tpt_offset + extra_bias;
+	power_idx = base_idx + by_rate_diff + tpt_offset + extra_bias + transmit_power_boost;
+
+	if (transmit_power_override != 0)
+		power_idx = transmit_power_override;
+	if (power_idx < 1)
+		power_idx = 1;
 
 	if (power_idx < 0)
 		power_idx = 0;
-	else if (power_idx > MAX_POWER_INDEX)
-		power_idx = MAX_POWER_INDEX;
+	else if (power_idx > hal_spec->txgi_max)
+		power_idx = hal_spec->txgi_max;
 
 	if (power_idx % 2 == 1 && !IS_NORMAL_CHIP(pHalData->version_id))
 		--power_idx;
@@ -1480,6 +1487,7 @@ phy_SwBand8812(
 	return ret_value;
 }
 
+#pragma clang optimize off
 u8
 phy_GetSecondaryChnl_8812(
 	IN	PADAPTER	Adapter
@@ -1521,6 +1529,7 @@ phy_GetSecondaryChnl_8812(
 	/*RTW_INFO("SCMapping: SC Value %x\n", ((SCSettingOf40 << 4) | SCSettingOf20));*/
 	return (SCSettingOf40 << 4) | SCSettingOf20;
 }
+#pragma clang optimize on
 
 VOID
 phy_SetRegBW_8812(

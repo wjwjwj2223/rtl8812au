@@ -1131,6 +1131,12 @@ PHY_GetTxPowerLevel8814(
 	else
 		*powerlevel = TxPwrDbm;
 #endif //0
+/*
+	//PMPT_CONTEXT            pMptCtx = &(Adapter->mppriv.mpt_ctx);
+	//u8 mgn_rate = mpt_to_mgnt_rate(HwRateToMPTRate(Adapter->mppriv.rateidx));
+	*powerlevel=PHY_GetTxPowerIndex8814A(Adapter,RF_PATH_A ,MGN_MCS7, pHalData->current_channel_bw, pHalData->current_channel, NULL);
+	*powerlevel/=2;
+*/
 }
 
 VOID
@@ -1163,7 +1169,7 @@ PHY_SetTxPowerLevel8814(
 						   		{MGN_VHT3SS_MCS4, MGN_VHT3SS_MCS5, MGN_VHT3SS_MCS6, MGN_VHT3SS_MCS7}, 
 						 		{MGN_VHT3SS_MCS8, MGN_VHT3SS_MCS9, 0, 0}};	
 
-	
+
 	for( path = RF_PATH_A; path <= RF_PATH_D; ++path )
 	{
 			phy_set_tx_power_level_by_path(Adapter, Channel, (u8)path);
@@ -1177,7 +1183,7 @@ PHY_SetTxPowerLevel8814(
 }
 
 /**************************************************************************************************************
- *   Description: 
+ *   Description:
  *       The low-level interface to get the FINAL Tx Power Index , called  by both MP and Normal Driver.
  *
  *                                                                                    <20120830, Kordan>
@@ -1186,13 +1192,14 @@ u8
 PHY_GetTxPowerIndex8814A(
 	IN	PADAPTER		pAdapter,
 	IN	enum rf_path		RFPath,
-	IN	u8			Rate,	
-	IN	u8			BandWidth,	
+	IN	u8			Rate,
+	IN	u8			BandWidth,
 	IN	u8			Channel,
 	struct txpwr_idx_comp *tic
 	)
 {
 	PHAL_DATA_TYPE	pHalData = GET_HAL_DATA(pAdapter);
+	struct hal_spec_t *hal_spec = GET_HAL_SPEC(pAdapter);
 	s8				powerDiffByRate = 0;
 	s8				txPower = 0, limit = 0;
 	u8				ntx_idx = MgntQuery_NssTxRate(Rate );
@@ -1200,27 +1207,33 @@ PHY_GetTxPowerIndex8814A(
 	s8				tpt_offset = 0;
 
 	/* RTW_INFO( "===>%s\n", __FUNCTION__ ); */
-	
-	txPower = (s8) PHY_GetTxPowerIndexBase( pAdapter, RFPath, Rate, ntx_idx, BandWidth, Channel, &bIn24G );
+	if(pAdapter->mppriv.bSetTxPower)
+	{
+		PMPT_CONTEXT pMptCtx = &(pAdapter->mppriv.mpt_ctx);
+		txPower = pMptCtx->TxPwrLevel[RFPath];
+	}
+	else
+	{
+		txPower = (s8) PHY_GetTxPowerIndexBase( pAdapter, RFPath, Rate, ntx_idx, BandWidth, Channel, &bIn24G );
 
-	powerDiffByRate = PHY_GetTxPowerByRate( pAdapter, (u8)(!bIn24G), RFPath, Rate );
+		powerDiffByRate = PHY_GetTxPowerByRate( pAdapter, (u8)(!bIn24G), RFPath, Rate );
 
-	limit = PHY_GetTxPowerLimit( pAdapter, pAdapter->registrypriv.RegPwrTblSel, (u8)(!bIn24G), pHalData->current_channel_bw, RFPath, Rate,ntx_idx, pHalData->current_channel);
-	tpt_offset = PHY_GetTxPowerTrackingOffset(pAdapter, RFPath, Rate);
+		limit = PHY_GetTxPowerLimit( pAdapter, NULL, (u8)(!bIn24G), pHalData->current_channel_bw, RFPath, Rate,ntx_idx, pHalData->current_channel);
+		tpt_offset = PHY_GetTxPowerTrackingOffset(pAdapter, RFPath, Rate);
 
-	powerDiffByRate = powerDiffByRate > limit ? limit : powerDiffByRate;
-	/*RTW_INFO("Rate-0x%x: (TxPower, PowerDiffByRate Path-%c) = (0x%X, %d)\n", Rate, ((RFPath==0)?'A':(RFPath==1)?'B':(RFPath==2)?'C':'D'), txPower, powerDiffByRate);*/
+		powerDiffByRate = powerDiffByRate > limit ? limit : powerDiffByRate;
+		/*RTW_INFO("Rate-0x%x: (TxPower, PowerDiffByRate Path-%c) = (0x%X, %d)\n", Rate, ((RFPath==0)?'A':(RFPath==1)?'B':(RFPath==2)?'C':'D'), txPower, powerDiffByRate);*/
 
-	txPower += powerDiffByRate;
-	
-	//txPower += PHY_GetTxPowerTrackingOffset( pAdapter, RFPath, Rate );
-#if 0 //todo ?
-#if CCX_SUPPORT
-	CCX_CellPowerLimit( pAdapter, Channel, Rate, &txPower );
-#endif
-#endif
-	phy_TxPwrAdjInPercentage(pAdapter, (u8 *)&txPower);
-
+		txPower += powerDiffByRate;
+		
+		//txPower += PHY_GetTxPowerTrackingOffset( pAdapter, RFPath, Rate );
+	#if 0 //todo ?
+	#if CCX_SUPPORT
+		CCX_CellPowerLimit( pAdapter, Channel, Rate, &txPower );
+	#endif
+	#endif
+		phy_TxPwrAdjInPercentage(pAdapter, (u8 *)&txPower);
+	}
 	if (tic) {
 		tic->ntx_idx = ntx_idx;
 		tic->base = txPower;
@@ -1230,11 +1243,10 @@ PHY_GetTxPowerIndex8814A(
 		tic->ebias = 0;
 	}
 
-	phy_TxPwrAdjInPercentage(pAdapter, (u8 *)&txPower);
-	if(txPower > MAX_POWER_INDEX)
-		txPower = MAX_POWER_INDEX;
+	if(txPower > hal_spec->txgi_max)
+		txPower = hal_spec->txgi_max;
 
-	//if (Adapter->registrypriv.mp_mode==0 &&
+	//if (Adapter->registrypriv.mp_mode==0 && 
 		//(pHalData->bautoload_fail_flag || pHalData->EfuseMap[EFUSE_INIT_MAP][EEPROM_TX_PWR_INX_JAGUAR] == 0xFF))
 		//txPower = 0x12;
 

@@ -47,7 +47,7 @@ get_delta_swing_table_8821a(
 void
 halrf_rf_lna_setting_8821a(
 	struct dm_struct	*dm,
-	enum phydm_lna_set type
+	enum halrf_lna_set type
 );
 
 #endif	/*  #ifndef __HAL_PHY_RF_8821A_H__ */
